@@ -52,4 +52,4 @@ Resources:
           yum install -y httpd
           systemctl enable --now httpd
           echo "Cool website \n ${Message}" > /var/www/html/index.html
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EC2 --region ${AWS::Region}
