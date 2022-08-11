@@ -1,0 +1,98 @@
+Parameters:
+  Message:
+    Description: HTML Page Message
+    Default: "Really Cool Site"
+    Type: String
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "Key Pair for EC2 instance"
+
+  # Get Latest AMI ID In the region for Amazon Linux
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Description: "AMI Used for the EC2 Instance"
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH And HTTP Traffic from any IP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: 'Allow SSH'
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: 'Allow HTTP'
+
+  Bucket: 
+    Type: AWS::S3::Bucket
+  
+  EC2:
+    Type: AWS::EC2::Instance
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /etc/cfn/cfn-hup.conf:
+              mode: '000400'
+              owner: root
+              group: root
+              content: !Sub |
+                [main]
+                stack=${AWS::StackName}
+                region=${AWS::Region}
+                interval=1
+                verbose=true
+
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub | 
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.EC2.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource EC2 --region ${AWS::Region}
+                runas=root
+
+            /var/www/html/index.html:
+              content: !Sub |
+                Look at our ${Message}
+                
+          services:
+            sysvinit:
+              httpd:
+                enabled: true
+                ensureRunning: true
+                files:
+                - /var/www/html/index.html
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                - /etc/cfn/cfn-hup.conf
+                - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      KeyName: !Ref KeyName
+      InstanceType: t2.micro
+      ImageId: !Ref LatestAmiId
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+      Tags:
+      - Key: Name 
+        Value: Sample-EC2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource EC2 --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EC2 --region ${AWS::Region}

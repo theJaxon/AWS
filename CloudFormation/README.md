@@ -15,6 +15,14 @@
 
   # Shows an overview of which desired state actions have taken place
   cfn-init.log
+```
 
+---
 
+### CFN-HUP
+```bash
+# Useful Locations
+/var/log
+  # Show cfn hup logs related to reloading for monitored resources
+  cfn-hup.log
 ```
