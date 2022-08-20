@@ -26,3 +26,19 @@
   # Show cfn hup logs related to reloading for monitored resources
   cfn-hup.log
 ```
+
+---
+
+### Wordpress-Monolithic
+- Spins up an EC2 Instance with both MariaDB and Wordpress already configured on the machine (Bad practice)
+
+---
+
+```bash
+# store mariadb dump
+# -p is to prompt for password
+mysqldump -p -u <username> <db_name> > cool-site.sql
+
+# restore db 
+mysql -h <ip-address> -p -u <username> <db_name> < cool-site.sql 
+```
