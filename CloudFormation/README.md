@@ -40,5 +40,10 @@
 mysqldump -p -u <username> <db_name> > cool-site.sql
 
 # restore db 
-mysql -h <ip-address> -p -u <username> <db_name> < cool-site.sql 
+mysql -h <ip-address> -p -u <username> <db_name> < cool-site.sql
+
+# Modify config file to point to RDS
+vi /var/www/html/wp-config.php
+
+define('DB_HOST', '<RDS-CNAME>')
 ```
